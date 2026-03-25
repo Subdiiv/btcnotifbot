@@ -1,5 +1,8 @@
 .env
 __pycache__/
 *.pyc
+venv/
+.idea/
+.vscode/
 test_run.py
-.git/
+logs.*.json
