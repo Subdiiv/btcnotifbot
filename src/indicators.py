@@ -2,20 +2,32 @@ import ccxt
 import pandas as pd
 import pandas_ta as ta
 
-def fetch_coinbase_data(symbol='BTC/USDC', timeframe='5m', limit=100):
+def fetch_coinbase_data(symbol='BTC/USD', timeframe='5m', limit=100):
     """
-    Fetch OHLCV data from Coinbase.
-    Note: Coinbase uses USDC or USDT pairs.
+    Fetch OHLCV data from Coinbase Exchange.
     """
-    exchange = ccxt.coinbase()  # Or coinbasepro if preferred, but ccxt maps coinbase well.
-    try:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        return df
-    except Exception as e:
-        print(f"Error fetching data from Coinbase: {e}")
-        return None
+    # use coinbaseexchange for better OHLCV support
+    exchange = ccxt.coinbaseexchange({
+        'timeout': 20000,
+        'enableRateLimit': True,
+    })
+    
+    for attempt in range(3):
+        try:
+            ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+            if not ohlcv:
+                continue
+            df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            return df
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed to fetch from Coinbase: {e}")
+            if attempt < 2:
+                import time
+                time.sleep(2)
+            else:
+                return None
+    return None
 
 def calculate_indicators(df):
     """
