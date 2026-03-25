@@ -366,7 +366,7 @@ def main():
         asyncio.create_task(periodic_job(app))
 
     application.post_init = post_init
-    application.run_polling()
+    application.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
