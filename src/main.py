@@ -142,23 +142,36 @@ async def broadcast_update(app: Application):
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    if chat_id not in subscribers:
+    first_name = update.effective_user.first_name or "there"
+    new_user = chat_id not in subscribers
+
+    if new_user:
         subscribers.add(chat_id)
         save_json(SUBSCRIBERS_FILE, list(subscribers))
-        text = (
-            "🚀 *Welcome to BTC Monitor Bot!*\n\n"
-            "You are now subscribed to *5-minute BTC updates*\\.\n\n"
-            "Here's what I can do:\n"
-            "/now — Instant analysis\n"
-            "/currency usd|eur — Set your currency\n"
-            "/portfoliovalue 0\\.5 — Track your BTC holdings\n"
-            "/explain — What do RSI, EMA, MACD mean\\?\n"
-            "/status — Your settings\n"
-            "/stop — Unsubscribe\n"
-        )
-    else:
-        text = "✅ You are already subscribed."
-    await update.message.reply_text(text, parse_mode='MarkdownV2')
+
+    greeting = (
+        f"👋 Hey *{first_name}*, welcome to *BTC Monitor Bot!*\n\n"
+        "I'll ping you every *5 minutes* with live Bitcoin market data straight from Coinbase.\n\n"
+        "━━━━━━━━━━━━━━━━━\n"
+        "📊 *What I track for you:*\n"
+        "• 💰 BTC price & candle movement\n"
+        "• 📈 RSI — overbought/oversold signal\n"
+        "• 📉 EMA — trend direction\n"
+        "• 🧠 Fear & Greed — market sentiment\n"
+        "• 💼 Your BTC portfolio value (optional)\n\n"
+        "━━━━━━━━━━━━━━━━━\n"
+        "⚙️ *What you can do:*\n"
+        "• `/now` — Get an instant update\n"
+        "• `/currency eur` — Switch to Euros 🇪🇺\n"
+        "• `/portfoliovalue 0.5` — Track 0.5 BTC\n"
+        "• `/explain` — Learn what the indicators mean\n"
+        "• `/status` — See your settings\n"
+        "• `/stop` — Pause alerts\n\n"
+        "━━━━━━━━━━━━━━━━━\n"
+        "✅ *You are now subscribed!* Here's your first update:\n"
+    )
+
+    await update.message.reply_text(greeting, parse_mode='Markdown')
     msg = await get_analysis_message(chat_id)
     await update.message.reply_text(msg, parse_mode='Markdown')
 
