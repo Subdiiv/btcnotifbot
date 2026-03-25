@@ -141,37 +141,44 @@ async def broadcast_update(app: Application):
 # ── Commands ───────────────────────────────────────────────────────────────────
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
     first_name = update.effective_user.first_name or "there"
-    new_user = chat_id not in subscribers
-
-    if new_user:
-        subscribers.add(chat_id)
-        save_json(SUBSCRIBERS_FILE, list(subscribers))
 
     greeting = (
         f"👋 Hey *{first_name}*, welcome to *BTC Monitor Bot!*\n\n"
-        "I'll ping you every *5 minutes* with live Bitcoin market data straight from Coinbase.\n\n"
+        "I monitor Bitcoin live from Coinbase and can ping you every *5 minutes* with a full market snapshot.\n\n"
         "━━━━━━━━━━━━━━━━━\n"
-        "📊 *What I track for you:*\n"
-        "• 💰 BTC price & candle movement\n"
+        "📊 *What I track:*\n"
+        "• 💰 BTC price & 5-min candle movement\n"
         "• 📈 RSI — overbought/oversold signal\n"
         "• 📉 EMA — trend direction\n"
         "• 🧠 Fear & Greed — market sentiment\n"
         "• 💼 Your BTC portfolio value (optional)\n\n"
         "━━━━━━━━━━━━━━━━━\n"
-        "⚙️ *What you can do:*\n"
+        "⚙️ *Commands:*\n"
+        "• `/subscribe` — Start receiving 5-min alerts\n"
+        "• `/stop` — Stop alerts\n"
         "• `/now` — Get an instant update\n"
         "• `/currency eur` — Switch to Euros 🇪🇺\n"
         "• `/portfoliovalue 0.5` — Track 0.5 BTC\n"
-        "• `/explain` — Learn what the indicators mean\n"
-        "• `/status` — See your settings\n"
-        "• `/stop` — Pause alerts\n\n"
+        "• `/explain` — What do RSI, EMA, MACD mean?\n"
+        "• `/status` — See your settings\n\n"
         "━━━━━━━━━━━━━━━━━\n"
-        "✅ *You are now subscribed!* Here's your first update:\n"
+        "👆 Tap */subscribe* to start receiving alerts!"
     )
 
     await update.message.reply_text(greeting, parse_mode='Markdown')
+
+async def subscribe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    if chat_id in subscribers:
+        await update.message.reply_text("✅ You are already subscribed to 5-minute updates.")
+        return
+    subscribers.add(chat_id)
+    save_json(SUBSCRIBERS_FILE, list(subscribers))
+    await update.message.reply_text(
+        "🔔 *Subscribed!* You'll receive BTC updates every 5 minutes.\n\nHere's your first snapshot:",
+        parse_mode='Markdown'
+    )
     msg = await get_analysis_message(chat_id)
     await update.message.reply_text(msg, parse_mode='Markdown')
 
@@ -180,9 +187,9 @@ async def stop_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat_id in subscribers:
         subscribers.remove(chat_id)
         save_json(SUBSCRIBERS_FILE, list(subscribers))
-        await update.message.reply_text("❌ Unsubscribed. Use /start to re-subscribe.")
+        await update.message.reply_text("❌ Unsubscribed. Use /subscribe to start again.")
     else:
-        await update.message.reply_text("You are not subscribed.")
+        await update.message.reply_text("You are not subscribed. Use /subscribe to start.")
 
 async def now_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await get_analysis_message(update.effective_chat.id)
@@ -326,11 +333,12 @@ async def periodic_job(app: Application):
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 BOT_COMMANDS = [
-    BotCommand("start", "Subscribe to 5-minute BTC alerts"),
-    BotCommand("stop", "Unsubscribe from alerts"),
+    BotCommand("start", "Welcome & feature overview"),
+    BotCommand("subscribe", "Start receiving 5-minute BTC alerts"),
+    BotCommand("stop", "Stop receiving alerts"),
     BotCommand("now", "Get an instant market update"),
-    BotCommand("currency", "Switch currency: /currency usd or /currency eur"),
-    BotCommand("portfoliovalue", "Track holdings: /portfoliovalue 0.5"),
+    BotCommand("currency", "Switch currency: usd or eur"),
+    BotCommand("portfoliovalue", "Track your BTC: /portfoliovalue 0.5"),
     BotCommand("explain", "What do RSI, EMA, MACD & Fear/Greed mean?"),
     BotCommand("status", "View your settings"),
     BotCommand("help", "Show all commands"),
@@ -345,6 +353,7 @@ def main():
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start_cmd))
+    application.add_handler(CommandHandler("subscribe", subscribe_cmd))
     application.add_handler(CommandHandler("stop", stop_cmd))
     application.add_handler(CommandHandler("now", now_cmd))
     application.add_handler(CommandHandler("currency", currency_cmd))
