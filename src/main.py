@@ -2,7 +2,7 @@ import os
 import json
 import asyncio
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -103,7 +103,7 @@ async def get_analysis_message(chat_id: int = None) -> str:
 
     lines = [
         f"📊 *BTC 5-Minute Update* ({cur_sym})",
-        f"⏰ {datetime.utcnow().strftime('%H:%M UTC')}",
+        f"⏰ {datetime.now(timezone.utc).strftime('%H:%M UTC')}",
         "",
         f"💰 Price: `{price_str}` {arrow} ({change:+.2f}%)",
         "",
