@@ -142,41 +142,39 @@ async def broadcast_update(app: Application):
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     first_name = update.effective_user.first_name or "there"
-
     greeting = (
         f"👋 Hey *{first_name}*, welcome to *BTC Monitor Bot!*\n\n"
-        "I monitor Bitcoin live from Coinbase and can ping you every *5 minutes* with a full market snapshot.\n\n"
+        "I monitor Bitcoin every *5 minutes* using live Coinbase data and send you a full technical report.\n\n"
         "━━━━━━━━━━━━━━━━━\n"
         "📊 *What I track:*\n"
-        "• 💰 BTC price & 5-min candle movement\n"
-        "• 📈 RSI — overbought/oversold signal\n"
-        "• 📉 EMA — trend direction\n"
+        "• 💰 BTC price & candle direction\n"
+        "• 📈 RSI (14) — overbought/oversold signal\n"
+        "• 📉 EMA (20) — trend direction\n"
         "• 🧠 Fear & Greed — market sentiment\n"
         "• 💼 Your BTC portfolio value (optional)\n\n"
         "━━━━━━━━━━━━━━━━━\n"
         "⚙️ *Commands:*\n"
         "• `/subscribe` — Start receiving 5-min alerts\n"
-        "• `/stop` — Stop alerts\n"
-        "• `/now` — Get an instant update\n"
+        "• `/stop` — Pause alerts\n"
+        "• `/now` — Instant update\n"
         "• `/currency eur` — Switch to Euros 🇪🇺\n"
-        "• `/portfoliovalue 0.5` — Track 0.5 BTC\n"
-        "• `/explain` — What do RSI, EMA, MACD mean?\n"
-        "• `/status` — See your settings\n\n"
+        "• `/portfoliovalue 0.5` — Track BTC holdings\n"
+        "• `/explain` — What the indicators mean\n"
+        "• `/status` — Your current settings\n\n"
         "━━━━━━━━━━━━━━━━━\n"
-        "👆 Tap */subscribe* to start receiving alerts!"
+        "👇 Use /subscribe to start receiving alerts!"
     )
-
     await update.message.reply_text(greeting, parse_mode='Markdown')
 
 async def subscribe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id in subscribers:
-        await update.message.reply_text("✅ You are already subscribed to 5-minute updates.")
+        await update.message.reply_text("✅ You are already subscribed! Use /now for an instant update.")
         return
     subscribers.add(chat_id)
     save_json(SUBSCRIBERS_FILE, list(subscribers))
     await update.message.reply_text(
-        "🔔 *Subscribed!* You'll receive BTC updates every 5 minutes.\n\nHere's your first snapshot:",
+        "🔔 *Subscribed!* You'll now receive BTC updates every 5 minutes.\n\nHere's your first report:",
         parse_mode='Markdown'
     )
     msg = await get_analysis_message(chat_id)
@@ -189,7 +187,7 @@ async def stop_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_json(SUBSCRIBERS_FILE, list(subscribers))
         await update.message.reply_text("❌ Unsubscribed. Use /subscribe to start again.")
     else:
-        await update.message.reply_text("You are not subscribed. Use /subscribe to start.")
+        await update.message.reply_text("You are not subscribed. Use /subscribe to start receiving alerts.")
 
 async def now_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await get_analysis_message(update.effective_chat.id)
@@ -333,12 +331,12 @@ async def periodic_job(app: Application):
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 BOT_COMMANDS = [
-    BotCommand("start", "Welcome & feature overview"),
+    BotCommand("start", "About this bot & all commands"),
     BotCommand("subscribe", "Start receiving 5-minute BTC alerts"),
-    BotCommand("stop", "Stop receiving alerts"),
+    BotCommand("stop", "Pause alerts"),
     BotCommand("now", "Get an instant market update"),
-    BotCommand("currency", "Switch currency: usd or eur"),
-    BotCommand("portfoliovalue", "Track your BTC: /portfoliovalue 0.5"),
+    BotCommand("currency", "Set currency: /currency usd or /currency eur"),
+    BotCommand("portfoliovalue", "Track holdings: /portfoliovalue 0.5"),
     BotCommand("explain", "What do RSI, EMA, MACD & Fear/Greed mean?"),
     BotCommand("status", "View your settings"),
     BotCommand("help", "Show all commands"),
