@@ -168,9 +168,11 @@ def main():
     application.add_handler(CommandHandler("help", help_cmd))
     application.add_handler(CommandHandler("status", status_cmd))
 
-    # We need to run the periodic task in the same loop
-    loop = asyncio.get_event_loop()
-    loop.create_task(periodic_job(application))
+    # Add the periodic task to the application's startup
+    async def post_init(app: Application):
+        asyncio.create_task(periodic_job(app))
+    
+    application.post_init = post_init
 
     # Polling starts here and blocks
     application.run_polling()

@@ -6,8 +6,8 @@ def fetch_coinbase_data(symbol='BTC/USD', timeframe='5m', limit=100):
     """
     Fetch OHLCV data from Coinbase Exchange.
     """
-    # use coinbaseexchange for better OHLCV support
-    exchange = ccxt.coinbaseexchange({
+    # use coinbasepro for better compatibility across ccxt versions
+    exchange = ccxt.coinbasepro({
         'timeout': 20000,
         'enableRateLimit': True,
     })
